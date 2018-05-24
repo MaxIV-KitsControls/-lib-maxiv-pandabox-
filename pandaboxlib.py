@@ -33,6 +33,7 @@ class PandA:
         self.sock.sendall(cmd + '\n')
         val = str(self.sock.recv(4096))
         print(val)
+        return val
 
     def save_config(self, save_file):
         input = get_lines(self.sock)
