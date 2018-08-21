@@ -35,6 +35,19 @@ class PandA:
         print(val)
         return val
 
+    def _num(self, s):
+        try:
+            return int(s)
+        except ValueError:
+            return float(s)
+
+    def numquery(self, cmd):
+        val = self.query(cmd)
+        val = val.split("=")[-1]
+        val = self._num(val)
+        print(str(val))
+        return val    
+    
     def save_config(self, save_file):
         input = get_lines(self.sock)
         output = file(save_file, 'w')
