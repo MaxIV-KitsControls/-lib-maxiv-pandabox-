@@ -57,7 +57,7 @@ panda.query('BITS.B=1')
 
 # start data acquisition thread
 pool = ThreadPool(processes=1)
-async_result = pool.apply_async(get_data, args = ("pandabox", 8889))
+async_result = pool.apply_async(get_data, args = (host, 8889))
 
 acq_status = panda.query('*PCAP.STATUS?')
 #print panda.numquery('*PCAP.STATUS?')
