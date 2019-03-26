@@ -30,7 +30,7 @@ panda.query('CLOCKS.B_PERIOD=0.001')
 panda.query('CLOCKS.B_PERIOD.UNITS=s')
 
 # gate signal to PCAP, how long acquiring
-acq_time = 1 
+acq_time = 0.005
 acq_time_units = "s"
 panda.query('PULSE1.WIDTH=%f' % (acq_time))
 panda.query('PULSE1.WIDTH.UNITS=%s' % (acq_time_units))
@@ -39,12 +39,13 @@ panda.query('PULSE1.WIDTH.UNITS=%s' % (acq_time_units))
 # PCAP
 panda.query('PCAP.TRIG=CLOCKS.OUTB')
 panda.query('PCAP.ENABLE=PULSE1.OUT')
+panda.query('PCAP.GATE=PULSE1.OUT')
 # PULSE1
 panda.query('PULSE1.TRIG=BITS.OUTB')
 
 # set values to be acquired by PCAP
 panda.query('FMC_ACQ427_IN.VAL1.CAPTURE=Value')
-panda.query('FMC_ACQ427_IN.VAL2.CAPTURE=Value')
+panda.query('FMC_ACQ427_IN.VAL2.CAPTURE=Sum')
 
 # prepare acquisition
 # reset values
@@ -71,7 +72,7 @@ print "Points acquired: ", points_acquired
 
 data_acquired = async_result.get()
 
-#print "Data received: ", data_acquired
+print "Data received: ", data_acquired
 
 # comment last line
 data_acquired_split = data_acquired.split("END")
