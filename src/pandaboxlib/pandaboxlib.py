@@ -101,3 +101,21 @@ class PandA:
         #self.query('SEQ%d.TABLE<<\n'%(block_id)+''.join(pos_cmd))
         self.query('SEQ%d.TABLE<\n'%(block_id)+''.join(pos_cmd))
 
+    def capture_order(self, channel_name):
+        """
+        Takes a channel name (attribute) as input and returns the
+        column order number of that channel in the capture.
+        """
+        capture_list = []
+        capture_str = self.query('*CAPTURE?')
+        capture_str = capture_str.split('\n')
+        for elem in capture_str:
+            elem = elem[1:]
+            elem = elem.split(' ')
+            elem = elem[0]
+            if elem:
+                capture_list.append(elem)
+        if channel_name in capture_list:
+            return capture_list.index(channel_name)
+        else:
+            raise ValueError('Channel_name not in capture list..')
