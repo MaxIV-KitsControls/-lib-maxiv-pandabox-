@@ -101,3 +101,11 @@ class PandA:
         #self.query('SEQ%d.TABLE<<\n'%(block_id)+''.join(pos_cmd))
         self.query('SEQ%d.TABLE<\n'%(block_id)+''.join(pos_cmd))
 
+    def get_number_channels(self):
+        """
+        Returns the number of channels enabled in the capture.
+        """
+        capture_str = self.query('*CAPTURE?')
+        capture_str = capture_str.split('\n')
+        num_chan = (len(capture_str)-2) #-2 because of . and ""
+        return num_chan
