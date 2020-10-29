@@ -7,8 +7,8 @@ KITS @ MAX-IV 2018-05-25.
 
 import socket
 import sys
-from save_config import get_lines, read_response, save_state, save_table
-from save_config import save_metatable, save_metadata
+from .save_config import get_lines, read_response, save_state, save_table
+from .save_config import save_metatable, save_metadata
 
 class PandA:
    
@@ -30,11 +30,15 @@ class PandA:
         self.sock.close()
         
     def query(self, cmd):
-        self.sock.sendall(cmd + '\n')
-        val = str(self.sock.recv(4096))
+        self.sock.sendall((cmd + '\n').encode())
+        val = str(self.sock.recv(4096).decode())
         print(val)
         return val
 
+    def query_value(self, cmd):
+        val = self.query(cmd)
+        return float(val.strip("\n").split("=")[1])
+        
     def _num(self, s):
         try:
             return int(s)
