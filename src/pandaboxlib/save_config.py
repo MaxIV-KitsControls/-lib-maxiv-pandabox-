@@ -17,7 +17,7 @@ class get_lines:
 
     def __read_lines(self, buf):
         while True:
-            rx = self.sock.recv(65536)
+            rx = self.sock.recv(65536).decode()
             if not rx:
                 raise StopIteration
             buf += rx
@@ -39,7 +39,7 @@ class get_lines:
 
 
 def read_response(input, command, sock):
-    sock.sendall(command + '\n')
+    sock.sendall((command + '\n').encode())
     for line in input:
         if line[0] == '!':
             yield line[1:]
