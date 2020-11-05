@@ -16,5 +16,3 @@ panda.query('SEQ1.TABLE<B\nAAAXAAAAAAABAAAAAQAAAA==\n')
 panda.query('TTLOUT1.VAL=SEQ1.OUTA')
 
 panda.disconnect_from_panda()
-
-
