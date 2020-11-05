@@ -89,10 +89,10 @@ class PandA:
         repeats_b = '{0:016b}'.format(repeats)  # 16 bits
         trigger_b = '{0:04b}'.format(trigger_options[trigger])  # 4 bits (17-20)
         phase1_b = ""
-        for key, value in sorted(phase1.iteritems()):  # 6 bits (a-f)
+        for key, value in sorted(phase1.items()):  # 6 bits (a-f)
             phase1_b = "1" + phase1_b if value else "0" + phase1_b
         phase2_b = ""
-        for key, value in sorted(phase2.iteritems()):  # 6 bits (a-f)
+        for key, value in sorted(phase2.items()):  # 6 bits (a-f)
             phase2_b = "1" + phase2_b if value else "0" + phase2_b
         code_b = phase2_b + phase1_b + trigger_b + repeats_b  # 32 bits code
         code = int(code_b, 2)

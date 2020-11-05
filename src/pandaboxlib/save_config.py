@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # Script to save the state of the given Panda.
 
@@ -17,7 +17,7 @@ class GetLines:
 
     def __read_lines(self, buf):
         while True:
-            rx = self.sock.recv(65536).decode()
+            rx = str(self.sock.recv(65536).decode())
             if not rx:
                 raise StopIteration
             buf += rx
@@ -50,26 +50,26 @@ def read_response(input, command, sock):
 
 def save_state(input, output, command, sock):
     for line in read_response(input, command, sock):
-        print >> output, line
+        print(line, file=output)
 
 
 def save_table(input, output, table, sock):
     assert table[-1] == '<'
-    print >> output, table + 'B'
+    print(table + 'B', file=output)
     for line in read_response(input, table[:-1] + '.B?', sock):
-        print >> output, line
-    print >> output
+        print(line, file=output)
+    print('', file=output)
 
 
 def save_metatable(input, output, table, sock):
-    print >> output, table
+    print(table, file=output)
     for line in read_response(input, table[:-1] + '?', sock):
-        print >> output, line
-    print >> output
+        print(line, file=output)
+    print('', file=output)
 
 
 def save_metadata(input, output, line, sock):
     if line[-1] == '<':
         save_metatable(input, output, line, sock)
     else:
-        print >> output, line
+        print(line, file=output)
