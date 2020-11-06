@@ -28,7 +28,7 @@ class GetLines:
 
         return lines[0], lines[1:-1], lines[-1]
 
-    def next(self):
+    def __next__(self):
         if self.lines:
             line = self.lines[0]
             del self.lines[0]
