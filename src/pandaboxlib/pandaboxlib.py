@@ -72,7 +72,7 @@ class PandA:
 
     def load_config(self, load_file):
         for line in open(load_file):
-            self.sock.sendall(line)
+            self.sock.sendall(line.encode())
 
     def send_seq_table(self, block_id, repeats, trigger,
                        positions, time1, phase1, time2, phase2):

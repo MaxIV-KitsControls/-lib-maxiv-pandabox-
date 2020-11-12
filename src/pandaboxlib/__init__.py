@@ -1,1 +1,1 @@
-from pandaboxlib import *
+from .pandaboxlib import *
