@@ -7,3 +7,5 @@ More documents and information on github repository:
 
 https://github.com/PandABlocks/PandABlocks-server
 
+## Tests
+to run tests: `PYTHONPATH=src python2 -m pytest`

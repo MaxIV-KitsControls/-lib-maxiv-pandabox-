@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # Script to save the state of the given Panda.
 
@@ -6,7 +6,7 @@ import socket
 
 
 # Reads response lines from config socket.
-class get_lines:
+class GetLines:
     def __init__(self, sock):
         self.sock = sock
         self.buf = ''
@@ -17,7 +17,7 @@ class get_lines:
 
     def __read_lines(self, buf):
         while True:
-            rx = self.sock.recv(65536)
+            rx = str(self.sock.recv(65536).decode())
             if not rx:
                 raise StopIteration
             buf += rx
@@ -28,8 +28,7 @@ class get_lines:
 
         return lines[0], lines[1:-1], lines[-1]
 
-
-    def next(self):
+    def __next__(self):
         if self.lines:
             line = self.lines[0]
             del self.lines[0]
@@ -39,7 +38,7 @@ class get_lines:
 
 
 def read_response(input, command, sock):
-    sock.sendall(command + '\n')
+    sock.sendall((command + '\n').encode())
     for line in input:
         if line[0] == '!':
             yield line[1:]
@@ -48,27 +47,29 @@ def read_response(input, command, sock):
         else:
             assert False, 'Malformed response: "%s"' % line
 
+
 def save_state(input, output, command, sock):
     for line in read_response(input, command, sock):
-        print >>output, line
+        print(line, file=output)
 
 
 def save_table(input, output, table, sock):
     assert table[-1] == '<'
-    print >>output, table + 'B'
+    print(table + 'B', file=output)
     for line in read_response(input, table[:-1] + '.B?', sock):
-        print >>output, line
-    print >>output
+        print(line, file=output)
+    print('', file=output)
 
 
 def save_metatable(input, output, table, sock):
-    print >>output, table
+    print(table, file=output)
     for line in read_response(input, table[:-1] + '?', sock):
-        print >>output, line
-    print >>output
+        print(line, file=output)
+    print('', file=output)
+
 
 def save_metadata(input, output, line, sock):
     if line[-1] == '<':
         save_metatable(input, output, line, sock)
     else:
-        print >>output, line
+        print(line, file=output)
