@@ -6,13 +6,105 @@ KITS @ MAX-IV 2018-05-25.
 
 import socket
 import sys
-from .save_config import GetLines, read_response, save_state, save_table
-from .save_config import save_metatable, save_metadata
 
 # Use standard python logging for debug output.
 import logging
 logger = logging.getLogger(__name__)
 
+
+class _Design:
+    """Helper class for saving/loading a PandABox block-design
+
+    Based on example client in `PandABlocks-server <https://github.com/PandABlocks/PandABlocks-server/blob/master/python/save-state>`_
+
+    """
+
+    def __init__(self, sock):
+        self.sock = sock
+        self.buf = ''
+        self.lines = []
+
+    def __iter__(self):
+        return self
+
+    def __read_lines(self, buf):
+        while True:
+            bufsize = 2**16
+            rx = str(self.sock.recv(bufsize).decode())
+            if not rx:
+                raise StopIteration
+            buf += rx
+
+            lines = buf.split('\n')
+            if len(lines) > 1:
+                break
+
+        return lines[0], lines[1:-1], lines[-1]
+
+    def __next__(self):
+        if self.lines:
+            line = self.lines[0]
+            del self.lines[0]
+        else:
+            line, self.lines, self.buf = self.__read_lines(self.buf)
+        return line
+
+    def _read_response(self, command):
+        self.sock.sendall((command + '\n').encode())
+        for line in self:
+            if line[0] == '!':
+                yield line[1:]
+            elif line[0] == '.':
+                break
+            else:
+                assert False, 'Malformed response: "{line}"'.format(line)
+
+    def _save_state(self, file, command):
+        for line in self._read_response(command):
+            print(line, file=file)
+
+    def _save_table(self, file, table):
+        assert table[-1] == '<'
+        print(table + 'B', file=file)
+        for line in self._read_response(table[:-1] + '.B?'):
+            print(line, file=file)
+        print('', file=file)
+
+    def _save_metatable(self, file, table):
+        print(table, file=file)
+        for line in self._read_response(table[:-1] + '?'):
+            print(line, file=file)
+        print('', file=file)
+
+    def _save_metadata(self, file, line):
+        if line[-1] == '<':
+            self._save_metatable(file, line)
+        else:
+            print(line, file=file)
+
+    def save(self, path):
+        with open(path, "wt") as file:
+
+            # First save the CONFIG state
+            self._save_state(file, '*CHANGES.ATTR?')
+            self._save_state(file, '*CHANGES.CONFIG?')
+
+            # Now save the individual tables.
+            # Note that we must read the complete table response before processing!
+            tables = list(self._read_response('*CHANGES.TABLE?'))
+            for table in tables:
+                self._save_table(file, table)
+
+            # Finally the metadata is a bit more tricky, because the table and value results
+            # are mixed together.
+            metadata = list(self._read_response('*CHANGES.METADATA?'))
+            for line in metadata:
+                self._save_metadata(file, line)
+
+    def load(self, path):
+        with open(path,"rt") as file:
+            for line in file:
+                self.sock.sendall(line.encode())
 
 class PandA:
 
@@ -55,28 +147,11 @@ class PandA:
         logger.debug("numquery %s returned %s" % (cmd, str(val).strip()))
         return val
 
-    def save_config(self, save_file):
-        input = GetLines(self.sock)
-        output = open(save_file, 'w')
-
-        # First save the CONFIG state
-        save_state(input, output, '*CHANGES.ATTR?', self.sock)
-        save_state(input, output, '*CHANGES.CONFIG?', self.sock)
-        # Now save the individual tables.
-        # Note that we must read the complete table response before processing!
-        tables = list(read_response(input, '*CHANGES.TABLE?', self.sock))
-        for table in tables:
-            save_table(input, output, table, self.sock)
-
-        # Finally the metadata is a bit more tricky, because the table and value results
-        # are mixed together.
-        metadata = list(read_response(input, '*CHANGES.METADATA?', self.sock))
-        for line in metadata:
-            save_metadata(input, output, line, self.sock)
+    def save_config(self, path):
+        _Design(self.sock).save(path)
 
     def load_config(self, load_file):
-        for line in open(load_file):
-            self.sock.sendall(line.encode())
+        _Design(self.sock).load(path)
 
     def send_seq_table(self, block_id, repeats, trigger,
                        positions, time1, phase1, time2, phase2):
