@@ -59,6 +59,16 @@ class _Design:
             else:
                 assert False, 'Malformed response: "{line}"'.format(line)
 
+    def _read_idn(self):
+        command = "*IDN?"
+        self.sock.sendall(f"{command}\n".encode())
+        bufsize = 2**16
+        idn = str(self.sock.recv(bufsize).decode())
+        if not idn.startswith("OK ="):
+            raise ValueError(f"'{command}' did not return OK")
+        response = idn.split("=")[1].rstrip("\n")
+        return response
+
     def _save_state(self, file, command):
         for line in self._read_response(command):
             print(line, file=file)
@@ -82,27 +92,84 @@ class _Design:
         else:
             print(line, file=file)
 
+    def _save_fw_version(self, file):
+        """Save firmware version
+
+        The blocks referenced in a design must be available in the currently
+        installed FPGA app. This can be ensured in a semi-automatic fashion by
+        specifying the required FW version in the saved design and subsequently
+        validating it when loading a design (see ``_validate_fw_version``).
+
+        N.b. Whilst the entire system identification string is saved, only the
+        FPGA field (i.e. installed FPGA app) is likely of interest.
+
+        """
+        idn = self._read_idn()
+        file.write(f"*ECHO {idn}?\n")      # Save as ECHO to avoid attempted assignment on load
+
+    def _validate_fw_version(self, file):
+        """Validate firmware version
+
+        The blocks referenced in a design must be available in the currently
+        installed FPGA app. This can be ensured in a semi-automatic fashion by
+        specifying the required FW version in the saved design (see
+        ``_save_fw_version``) and subsequently validating it when loading a
+        design.
+
+        N.b. Whilst the entire system identification string is saved, only the
+        FPGA field (i.e. installed FPGA app) is likely of interest.
+
+        """
+
+        def parse_fpga_from_idn(idn):
+            return idn.split(": ")[2]
+
+        # Read installed FPGA FW version
+        fpga_installed = parse_fpga_from_idn(self._read_idn())
+
+        # Read design FPGA FW version
+        offset = file.tell()
+        file.seek(0)
+        fpga_design = parse_fpga_from_idn(file.readline())
+        file.seek(offset)
+
+        # Validate
+        return fpga_design == fpga_installed
+
     def save(self, path):
         with open(path, "wt") as file:
 
-            # First save the CONFIG state
+            # Save firmware version
+            self._save_fw_version(file)
+
+            # Save the CONFIG state
             self._save_state(file, '*CHANGES.ATTR?')
             self._save_state(file, '*CHANGES.CONFIG?')
 
-            # Now save the individual tables.
-            # Note that we must read the complete table response before processing!
+            # Save individual tables
+            #
+            #   N.b. Must read complete table response before processing!
+            #
             tables = list(self._read_response('*CHANGES.TABLE?'))
             for table in tables:
                 self._save_table(file, table)
 
-            # Finally the metadata is a bit more tricky, because the table and value results
-            # are mixed together.
+            # Save metadata
+            #
+            #   N.b. Table and value results are mixed together
+            #
             metadata = list(self._read_response('*CHANGES.METADATA?'))
             for line in metadata:
                 self._save_metadata(file, line)
 
     def load(self, path):
         with open(path,"rt") as file:
+
+            # Validate FPGA firmware version
+            if not self._validate_fw_version(file):
+                raise ValueError("Design and installed FPGA FW versions do not match")
+
+            # Apply design
             for line in file:
                 self.sock.sendall(line.encode())
 
@@ -163,7 +230,7 @@ class PandA:
         self.connect_to_panda()              # Ensure first `*CHANGES` request on connection
         _Design(self.sock).save(path)
 
-    def load_config(self, load_file):
+    def load_config(self, path):
         _Design(self.sock).load(path)
 
     def send_seq_table(self, block_id, repeats, trigger,
