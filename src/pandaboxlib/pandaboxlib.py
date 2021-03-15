@@ -104,9 +104,9 @@ class _Design:
 
 class PandA:
 
-    def __init__(self, host):
+    def __init__(self, host, port=8888):
         self.host = host
-        self.port = 8888
+        self.port = port
 
         # Create a TCP socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
