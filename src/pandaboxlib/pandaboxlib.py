@@ -104,21 +104,27 @@ class _Design:
 
 class PandA:
 
+    sock = None
+
     def __init__(self, host, port=8888):
         self.host = host
         self.port = port
 
-        # Create a TCP socket
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-        self.sock.settimeout(1)
 
     def connect_to_panda(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(
+            socket.SOL_TCP,          # Disable Nagle algorithm
+            socket.TCP_NODELAY,      # (https://linux.die.net/man/7/tcp)
+            1                        # Is this really necessary?
+        )
+        self.sock.settimeout(1)
         self.sock.connect((self.host, self.port))
 
     def disconnect_from_panda(self):
         self.sock.shutdown(socket.SHUT_WR)
         self.sock.close()
+        self.sock = None
 
     def query(self, cmd):
         self.sock.sendall((cmd + '\n').encode())
