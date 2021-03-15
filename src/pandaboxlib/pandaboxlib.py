@@ -114,6 +114,9 @@ class PandA:
         self.host = host
         self.port = port
 
+    def __del__(self):
+        if self.sock is not None:
+            self.disconnect_from_panda()
 
     def connect_to_panda(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
