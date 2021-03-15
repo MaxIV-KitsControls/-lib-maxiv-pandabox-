@@ -106,6 +106,7 @@ class _Design:
             for line in file:
                 self.sock.sendall(line.encode())
 
+
 class PandA:
 
     sock = None
@@ -157,6 +158,9 @@ class PandA:
         return val
 
     def save_config(self, path):
+        if self.sock is not None:
+            self.disconnect_from_panda()
+        self.connect_to_panda()              # Ensure first `*CHANGES` request on connection
         _Design(self.sock).save(path)
 
     def load_config(self, load_file):
