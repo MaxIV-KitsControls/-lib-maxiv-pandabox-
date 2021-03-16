@@ -224,7 +224,7 @@ class PandA:
 
     def connect_to_panda(self):
         """Create socket connection to host"""
-        if self.socket is None
+        if self.sock is None:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.setsockopt(
                 socket.SOL_TCP,          # Disable Nagle algorithm
@@ -236,7 +236,7 @@ class PandA:
 
     def disconnect_from_panda(self):
         """Close socket connection to host"""
-        if self.socket is not None
+        if self.sock is not None:
             self.sock.shutdown(socket.SHUT_WR)
             self.sock.close()
             self.sock = None
