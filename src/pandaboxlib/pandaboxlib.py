@@ -208,12 +208,16 @@ class _Design:
 
 class PandA:
 
-    sock = None
+    _response_multivalue = ("!",".")
 
     def __init__(self, host, port=8888):
         """Initializer"""
+
+        # Connection attributes
         self.host = host
         self.port = port
+        self.sock = None
+        self._recv_buffer = ""
 
     def __del__(self):
         """Finalizer/destructor
@@ -245,6 +249,78 @@ class PandA:
             self.sock.shutdown(socket.SHUT_WR)
             self.sock.close()
             self.sock = None
+
+    def _send(self, cmd):
+        """Send generic command
+
+        Appends newline
+
+        """
+        return self.sock.sendall(       # Should return None
+            f"{cmd}\n".encode()
+        )
+
+    def _recv(self):
+        r"""Iterate over response lines
+
+        tl;dr: Generator for iteration over reponses
+
+        As so eloquantly put by Gordon McMillan;
+
+            Now if you think about that a bit, you’ll come to realize
+            a fundamental truth of sockets: messages must either be
+            fixed length (yuck), or be delimited (shrug), or indicate
+            how long they are (much better), or end by shutting down
+            the connection. The choice is entirely yours, (but some
+            ways are righter than others).
+            
+            --- https://docs.python.org/3/howto/sockets.html
+
+        Whilst the PandABlocks-server protocol opts for ('\n') delimited
+        messages, multi-value responses share the same delimiter. As such,
+        simple tokenization on the delimiter will be insufficient, and
+        instead partial multi-value responses must be detected and handled.
+
+        This method receives data from the socket until the data ends with
+        the delimiter _and_ the received response is confirmed not to be a
+        partial multi-value response. The tokenized responses are periodically
+        yielded as generator elements.
+
+        N.b.
+
+          * Delimiters are always stripped
+          * Multi-value responses are returned value-by-value (no grouping)
+
+        """
+        delimiter = "\n"
+        line = self._response_multivalue[0]
+        while (
+            self._recv_buffer is not ""               # Partial response in buffer
+        ) or (
+            line[0] == self._response_multivalue[0]   # Partial multi-value response
+        ):
+
+            # Read from socket
+            while delimiter not in self._recv_buffer:
+                bufsize = 2**12
+                try:
+                    byte_buffer = self.sock.recv(bufsize).decode()
+                except socket.timeout as err:       # Network issues…
+                    self.disconnect_from_panda()    # …close and abort!
+                    raise err
+                self._recv_buffer += str(byte_buffer)
+
+            # Tokenize
+            lines = self._recv_buffer.split(delimiter)
+            self._recv_buffer = lines[-1]
+            lines = lines[:-1]
+            for line in lines:
+                yield line
+
+    @property
+    def _responses(self):
+        """Response iterator"""
+        return self._recv()
 
     # ---- Legacy interface -------------------------------- #
 
