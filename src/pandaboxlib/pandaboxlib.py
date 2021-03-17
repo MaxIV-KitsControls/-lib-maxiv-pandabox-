@@ -366,6 +366,40 @@ class PandA:
         else:
             raise ValueError(f"Unknown response ('{response}')")
 
+    def _assign(self, target, value, operator="="):
+        """Assign value to target
+
+        * Successful assignment returns ``None``
+
+        """
+        operators = ("=", "<", "<<", "<B", "<<B")
+        if operator not in operators:
+            raise ValueError(f"Unknown operator ('{operator}')")
+        self._send(f"{target}{operator}{value}")
+        responses = self._responses
+        response = next(responses)
+        if self._response_is_error(response):
+            raise RuntimeError(response.lstrip(self._response_error))
+        elif self._response_is_value(response):
+            raise ValueError("Assignments should not return values")
+        elif self._response_is_multivalue(response):
+            raise ValueError("Assignments should not return multi values")
+        elif self._response_is_success(response):
+            pass
+        else:
+            raise ValueError(f"Unknown response ('{response}')")
+
+    def _assign_table(self, target, values, operator="<"):
+        """Assign table value to target
+
+        * ``values`` must be an iterable
+        * Successful assignment returns ``None``
+
+        """
+        value = "\n".join(values)
+        value += "\n"                    # Blank line termination
+        return self._assign(target, value, operator)
+
     # ---- Legacy interface -------------------------------- #
 
     def connect_to_panda(self):
