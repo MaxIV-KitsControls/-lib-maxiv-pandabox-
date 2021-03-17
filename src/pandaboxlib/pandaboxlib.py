@@ -226,24 +226,33 @@ class PandA:
         if self.sock is not None:
             self.disconnect_from_panda()
 
-    def connect_to_panda(self):
+    def connect(self):
         """Create socket connection to host"""
-        if self.socket is None
+        if self.sock is None:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.setsockopt(
                 socket.SOL_TCP,          # Disable Nagle algorithm
                 socket.TCP_NODELAY,      # (https://linux.die.net/man/7/tcp)
                 1                        # Is this really necessary?
             )
-            self.sock.settimeout(1)
+            timeout = 5                  # 5 second socket timeout
+            self.sock.settimeout(timeout)
             self.sock.connect((self.host, self.port))
 
-    def disconnect_from_panda(self):
+    def disconnect(self):
         """Close socket connection to host"""
-        if self.socket is not None
+        if self.sock is not None:
             self.sock.shutdown(socket.SHUT_WR)
             self.sock.close()
             self.sock = None
+
+    # ---- Legacy interface -------------------------------- #
+
+    def connect_to_panda(self):
+        return self.connect()
+
+    def disconnect_from_panda(self):
+        return self.disconnect()
 
     def query(self, cmd):
         """Send command to host and return response"""
