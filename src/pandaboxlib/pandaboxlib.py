@@ -208,6 +208,9 @@ class _Design:
 
 class PandA:
 
+    _response_success = "OK"
+    _response_value = "OK ="
+    _response_error = "ERR "
     _response_multivalue = ("!",".")
 
     def __init__(self, host, port=8888):
@@ -321,6 +324,47 @@ class PandA:
     def _responses(self):
         """Response iterator"""
         return self._recv()
+
+    def _response_is_success(self, response):
+        """Test for success response"""
+        return response == self._response_success
+
+    def _response_is_value(self, response):
+        """Test for value response"""
+        return response.startswith(self._response_value)
+
+    def _response_is_error(self, response):
+        """Test for error response"""
+        return response.startswith(self._response_error)
+
+    def _response_is_multivalue(self, response):
+        """Test for multi value response"""
+        return response.startswith(self._response_multivalue[0])
+
+    def _query(self, target):
+        """Query target value
+
+        * Responses are stripped of flags, delimiters, etc.
+        * Multi value responses are returned as an iterable
+
+        """
+        self._send(f"{target}?")
+        responses = self._responses
+        response = next(responses)
+        if self._response_is_error(response):
+            raise RuntimeError(response.lstrip(self._response_error))
+        elif self._response_is_value(response):
+            return response.lstrip(self._response_value)
+        elif self._response_is_multivalue(response):
+            strip = lambda r: r.lstrip(self._response_multivalue[0])
+            response = [ strip(response) ]
+            response += [ strip(r) for r in responses ]
+            assert response[-1] == "."
+            return response[:-1]
+        elif self._response_is_success(response):
+            raise ValueError("Queries should not return success")
+        else:
+            raise ValueError(f"Unknown response ('{response}')")
 
     # ---- Legacy interface -------------------------------- #
 
