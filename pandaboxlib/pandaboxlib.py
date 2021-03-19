@@ -298,7 +298,7 @@ class PandA:
         delimiter = "\n"
         line = self._response_multivalue[0]
         while (
-            self._recv_buffer is not ""               # Partial response in buffer
+            self._recv_buffer                         # Partial response in buffer
         ) or (
             line[0] == self._response_multivalue[0]   # Partial multi-value response
         ):
