@@ -219,7 +219,7 @@ class PandA:
         # Connection attributes
         self.host = host
         self.port = port
-        self.sock = None
+        self._sock = None
         self._recv_buffer = ""
 
     def __del__(self):
@@ -230,28 +230,28 @@ class PandA:
           * Close socket gracefully
 
         """
-        if self.sock is not None:
+        if self._sock is not None:
             self.disconnect_from_panda()
 
     def connect(self):
         """Create socket connection to host"""
-        if self.sock is None:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.setsockopt(
+        if self._sock is None:
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self._sock.setsockopt(
                 socket.SOL_TCP,          # Disable Nagle algorithm
                 socket.TCP_NODELAY,      # (https://linux.die.net/man/7/tcp)
                 1                        # Is this really necessary?
             )
             timeout = 5                  # 5 second socket timeout
-            self.sock.settimeout(timeout)
-            self.sock.connect((self.host, self.port))
+            self._sock.settimeout(timeout)
+            self._sock.connect((self.host, self.port))
 
     def disconnect(self):
         """Close socket connection to host"""
-        if self.sock is not None:
-            self.sock.shutdown(socket.SHUT_WR)
-            self.sock.close()
-            self.sock = None
+        if self._sock is not None:
+            self._sock.shutdown(socket.SHUT_WR)
+            self._sock.close()
+            self._sock = None
 
     def _send(self, cmd):
         """Send generic command
@@ -259,7 +259,7 @@ class PandA:
         Appends newline
 
         """
-        return self.sock.sendall(       # Should return None
+        return self._sock.sendall(       # Should return None
             f"{cmd}\n".encode()
         )
 
@@ -307,7 +307,7 @@ class PandA:
             while delimiter not in self._recv_buffer:
                 bufsize = 2**12
                 try:
-                    byte_buffer = self.sock.recv(bufsize).decode()
+                    byte_buffer = self._sock.recv(bufsize).decode()
                 except socket.timeout as err:       # Network issues…
                     self.disconnect_from_panda()    # …close and abort!
                     raise err
@@ -410,9 +410,9 @@ class PandA:
 
     def query(self, cmd):
         """Send command to host and return response"""
-        self.sock.sendall((cmd + '\n').encode())
-        val = str(self.sock.recv(4096).decode())
-        logger.debug("query %s returned %s" % (cmd, str(val).strip()))
+        self._sock.sendall((cmd + '\n').encode())
+        val = str(self._sock.recv(4096).decode())
+        print(val)
         return val
 
     def query_value(self, cmd):
@@ -437,14 +437,14 @@ class PandA:
 
     def save_config(self, path):
         """Save design to file"""
-        if self.sock is not None:
+        if self._sock is not None:
             self.disconnect_from_panda()
         self.connect_to_panda()              # Ensure first `*CHANGES` request on connection
-        _Design(self.sock).save(path)
+        _Design(self._sock).save(path)
 
     def load_config(self, path):
         """Load design from file"""
-        _Design(self.sock).load(path)
+        _Design(self._sock).load(path)
 
     def send_seq_table(self, block_id, repeats, trigger,
                        positions, time1, phase1, time2, phase2):
