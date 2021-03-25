@@ -153,6 +153,37 @@ mock_socket_factory = MockSocketFactory(responses=mock_socket_responses)
     "pandaboxlib.socket.socket",
     new_callable=mock_socket_factory
 )
+class TestPandA(unittest.TestCase):
+    """Tests for public interface provided by pandaboxlib.PandA class"""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.panda_factory = PandAFactory()
+
+    def test_init_assign_host(self, mocksock):
+        """Host assignment at initialization"""
+        host = self.panda_factory.host
+        panda = pandaboxlib.PandA(host)
+        self.assertEqual(panda.host, host)
+
+    def test_init_assign_port(self, mocksock):
+        """Port assignment at initialization"""
+        host = self.panda_factory.host
+        port = 8080
+        assert port != pandaboxlib.PandA(host).port         # Not default port
+        panda = pandaboxlib.PandA(host, port=port)
+        self.assertEqual(panda.port, port)
+
+    def test_init_default_port(self, mocksock):
+        """Default port assignment at initialization"""
+        host = self.panda_factory.host
+        panda = pandaboxlib.PandA(host)
+        self.assertIsInstance(panda.port, int)
+
+@unittest.mock.patch(
+    "pandaboxlib.socket.socket",
+    new_callable=mock_socket_factory
+)
 class TestPandALegacy(unittest.TestCase):
     """Tests for legacy public interface provided by pandaboxlib.PandA class"""
 
