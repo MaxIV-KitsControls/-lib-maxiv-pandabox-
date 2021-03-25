@@ -379,10 +379,18 @@ class PandA:
         else:
             raise ValueError(f"Unknown response ('{response}')")
 
-    def _assign(self, target, value, operator="="):
+    def assign(self, target: str, value: str, operator: str="=") -> typing.NoReturn:
         """Assign value to target
 
-        * Successful assignment returns ``None``
+        Assign ``value`` to ``target`` where ``target`` should be a valid block field or attribute. Both ``target`` and ``value`` are strings.
+
+        Successful assignment returns ``None``. Failed assignment raises ``RuntimeError``.
+
+        :param str target: Target field or attribute
+        :param str value: Value to assign
+        :param str value: Value to assign
+        :rtype: None
+        :raises RuntimeError: On failed assignment
 
         """
         operators = ("=", "<", "<<", "<B", "<<B")
