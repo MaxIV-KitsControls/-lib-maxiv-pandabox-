@@ -359,7 +359,9 @@ class PandA:
         :raises RuntimeError: On error response
 
         """
-        self._send(f"{target}?")
+        if target[-1] != "?":
+            target += "?"
+        self._send(target)
         responses = self._responses
         response = next(responses)
         if self._response_is_error(response):
