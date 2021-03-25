@@ -384,15 +384,14 @@ class PandA:
     def assign(self, target: str, value: str, operator: str="=") -> typing.NoReturn:
         """Assign value to target
 
-        Assign ``value`` to ``target`` where ``target`` should be a valid block
-        field or attribute. Both ``target`` and ``value`` are strings.
+        Assign ``value`` to ``target``. ``target`` is a valid block field of
+        attribute. ``value`` is a string or numeric.
 
         Successful assignment returns ``None``. Failed assignment raises
         ``RuntimeError``.
 
         :param str target: Target field or attribute
-        :param str value: Value to assign
-        :param str value: Value to assign
+        :param value: Value to assign
         :rtype: None
         :raises RuntimeError: On failed assignment
 
