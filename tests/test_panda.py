@@ -257,6 +257,44 @@ class TestPandA(unittest.TestCase):
                 with self.assertRaises(exception):
                     panda.query_(cmd)
 
+    def test_assign_returns(self, mocksock):
+        """Assignment returns expected values"""
+        panda = self.panda_factory()
+        panda.connect()
+        returns = {
+
+            # Successful assignment
+            #
+            #   * Returns None
+            #   * "=" operator optional
+            #
+            ("TTLIN1.TERM", "50-Ohm"): None,
+            ("TTLIN1.TERM", "50-Ohm", "="): None
+
+        }    
+        for args, return_ in returns.items():
+            with self.subTest(args=args):
+                returned = panda.assign(*args)
+                self.assertEqual(returned, return_)
+
+    def test_assign_exceptions(self, mocksock):
+        """Assignment raises expected exceptions"""
+        panda = self.panda_factory()
+        panda.connect()
+        exceptions = {
+
+            # Failed assignment
+            ("TTLIN1.TERM", "100-Ohm"): RuntimeError,
+
+            # Bad operator
+            ("TTLIN1.TERM", "50-Ohm", "+"): ValueError
+
+        }
+        for args, exception in exceptions.items():
+            with self.subTest(args=args):
+                with self.assertRaises(exception):
+                    panda.assign(*args)
+
 @unittest.mock.patch(
     "pandaboxlib.socket.socket",
     new_callable=mock_socket_factory
