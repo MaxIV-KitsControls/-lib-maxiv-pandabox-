@@ -6,6 +6,7 @@ KITS @ MAX-IV 2018-05-25.
 
 import socket
 import sys
+import typing
 
 # Use standard python logging for debug output.
 import logging
@@ -341,11 +342,21 @@ class PandA:
         """Test for multi value response"""
         return response.startswith(self._response_multivalue[0])
 
-    def _query(self, target):
-        """Query target value
+    def query_(self, target: str) -> typing.Union[str,list]:
+        r"""Query target value
 
-        * Responses are stripped of flags, delimiters, etc.
-        * Multi value responses are returned as an iterable
+        Interrogate ``target`` and returns current value.
+
+        Single value responses are returned as a string stripped of ``OK =`` prefix and final ``\n`` delimiter.
+
+        Multiple value responses are returned as an iterable of strings. Each string is stripped of ``!`` prefix and final ``\n`` and `.` delimiters.
+
+        Error responses raise ``RuntimeError``.
+
+        :param str target: Target, with or without ``?`` suffix
+        :return: Target value
+        :rtype: str or list
+        :raises RuntimeError: On error response
 
         """
         self._send(f"{target}?")
