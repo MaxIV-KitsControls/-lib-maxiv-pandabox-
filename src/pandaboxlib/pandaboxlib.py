@@ -202,6 +202,9 @@ class _Design:
                 self.sock.sendall(line.encode())
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class PandA:
 
     sock = None
@@ -245,7 +248,7 @@ class PandA:
         """Send command to host and return response"""
         self.sock.sendall((cmd + '\n').encode())
         val = str(self.sock.recv(4096).decode())
-        print(val)
+        logger.debug("%s returned %s" % (cmd, str(val).strip()))
         return val
 
     def query_value(self, cmd):
@@ -265,7 +268,7 @@ class PandA:
         val = self.query(cmd)
         val = val.split("=")[-1]
         val = self._num(val)
-        print(str(val))
+        logger.debug("%s returned %s" % (cmd, str(val).strip()))
         return val
 
     def save_config(self, path):
