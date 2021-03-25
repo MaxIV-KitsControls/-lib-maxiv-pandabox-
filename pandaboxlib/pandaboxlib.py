@@ -347,9 +347,11 @@ class PandA:
 
         Interrogate ``target`` and returns current value.
 
-        Single value responses are returned as a string stripped of ``OK =`` prefix and final ``\n`` delimiter.
+        Single value responses are returned as a string stripped of ``OK =``
+        prefix and final ``\n`` delimiter.
 
-        Multiple value responses are returned as an iterable of strings. Each string is stripped of ``!`` prefix and final ``\n`` and `.` delimiters.
+        Multiple value responses are returned as an iterable of strings. Each 
+        string is stripped of ``!`` prefix and final ``\n`` and `.` delimiters.
 
         Error responses raise ``RuntimeError``.
 
@@ -382,9 +384,11 @@ class PandA:
     def assign(self, target: str, value: str, operator: str="=") -> typing.NoReturn:
         """Assign value to target
 
-        Assign ``value`` to ``target`` where ``target`` should be a valid block field or attribute. Both ``target`` and ``value`` are strings.
+        Assign ``value`` to ``target`` where ``target`` should be a valid block
+        field or attribute. Both ``target`` and ``value`` are strings.
 
-        Successful assignment returns ``None``. Failed assignment raises ``RuntimeError``.
+        Successful assignment returns ``None``. Failed assignment raises
+        ``RuntimeError``.
 
         :param str target: Target field or attribute
         :param str value: Value to assign
