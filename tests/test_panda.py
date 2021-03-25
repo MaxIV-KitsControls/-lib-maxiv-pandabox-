@@ -144,6 +144,7 @@ mock_socket_responses = {
     b"PULSE1.QUEUE?\n": b"OK =3\n",
     b"PULSE1.DELAY?\n": b"OK =2.5\n",
     b"PULSE1.DELAY.UNITS?\n": b"OK =s\n",
+    b"PULSE1.DELAY=3.5\n": b"OK\n",
     b"FOO.*?\n": b"ERR No such block\n"
 }
 mock_socket_factory = MockSocketFactory(responses=mock_socket_responses)
@@ -267,9 +268,11 @@ class TestPandA(unittest.TestCase):
             #
             #   * Returns None
             #   * "=" operator optional
+            #   * Numeric values accepted
             #
             ("TTLIN1.TERM", "50-Ohm"): None,
-            ("TTLIN1.TERM", "50-Ohm", "="): None
+            ("TTLIN1.TERM", "50-Ohm", "="): None,
+            ("PULSE1.DELAY", 3.5): None
 
         }    
         for args, return_ in returns.items():
