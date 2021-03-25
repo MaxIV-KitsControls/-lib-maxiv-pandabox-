@@ -193,6 +193,70 @@ class TestPandA(unittest.TestCase):
         panda.disconnect()
         mocksock.close.assert_called()
 
+    def test_query_returns(self, mocksock):
+        """Query returns expected values"""
+        panda = self.panda_factory()
+        panda.connect()
+        returns = {
+
+            # Single value return
+            #
+            #   * Returned as string
+            #   * Stripped of "OK =" prefix
+            #   * Stripped of "\n" suffix
+            #   * "?" suffix appended if necessary
+            #
+            "*IDN?": "PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server",
+            "*IDN": "PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server",
+
+            # Multiple value return
+            #
+            #   * Returned as iterable of strings
+            #   * Stripped of "!" prefix
+            #   * Stripped of "\n" suffix
+            #   * Stripped of "." suffix
+            #   * "?" suffix appended if necessary
+            #
+            "*CHANGES.ATTR?": [
+                "QDEC1.B.DELAY=0",
+                "QDEC2.B.DELAY=0",
+                "QDEC3.B.DELAY=0",
+                "QDEC4.B.DELAY=0"
+            ],
+            "*CHANGES.ATTR": [
+                "QDEC1.B.DELAY=0",
+                "QDEC2.B.DELAY=0",
+                "QDEC3.B.DELAY=0",
+                "QDEC4.B.DELAY=0"
+            ]
+
+        }
+        for cmd, return_ in returns.items():
+            with self.subTest(cmd=cmd):
+                returned = panda.query_(cmd)
+                self.assertEqual(returned, return_)
+
+    def test_query_exceptions(self, mocksock):
+        """Query raises expected exceptions"""
+        panda = self.panda_factory()
+        panda.connect()
+        exceptions = {
+
+            # Bad query
+            "FOO.*?": RuntimeError,
+
+            # Assignment attempt
+            "TTLIN1.TERM=50-Ohm": RuntimeError,
+
+            # Table assignment attempt
+            "PGEN1.TABLE<\n1\n2\n3\n\n": RuntimeError
+
+        }
+        for cmd, exception in exceptions.items():
+            with self.subTest(cmd=cmd):
+                with self.assertRaises(exception):
+                    panda.query_(cmd)
+
 @unittest.mock.patch(
     "pandaboxlib.socket.socket",
     new_callable=mock_socket_factory
