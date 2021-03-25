@@ -180,6 +180,19 @@ class TestPandA(unittest.TestCase):
         panda = pandaboxlib.PandA(host)
         self.assertIsInstance(panda.port, int)
 
+    def test_connect(self, mocksock):
+        """Connection succeeds"""
+        panda = self.panda_factory()
+        panda.connect()
+        mocksock.connect.assert_called()
+
+    def test_disconnect(self, mocksock):
+        """Disconnection succeeds"""
+        panda = self.panda_factory()
+        panda.connect()
+        panda.disconnect()
+        mocksock.close.assert_called()
+
 @unittest.mock.patch(
     "pandaboxlib.socket.socket",
     new_callable=mock_socket_factory
