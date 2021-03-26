@@ -140,6 +140,9 @@ mock_socket_responses = {
     b"TTLIN1.TERM=50-Ohm\n": b"OK\n",
     b"TTLIN1.TERM=100-Ohm\n": b"ERR Invalid enumeration value\n",
     b"PGEN1.TABLE<\n1\n2\n3\n\n": b"OK\n",
+    b"PGEN1.TABLE<<\n1\n2\n3\n\n": b"OK\n",
+    b"PGEN1.TABLE<B\nAQAAAAIAAAADAAAA\nAQAAAAIAAAADAAAA\n\n": b"OK\n",
+    b"PGEN1.TABLE<<B\nAQAAAAIAAAADAAAA\nAQAAAAIAAAADAAAA\n\n": b"OK\n",
     b"PGEN1.TABLE<\nfoo\nbar\nbaz\n\n": b"ERR Number missing\n",
     b"PULSE1.QUEUE?\n": b"OK =3\n",
     b"PULSE1.DELAY?\n": b"OK =2.5\n",
@@ -297,6 +300,51 @@ class TestPandA(unittest.TestCase):
             with self.subTest(args=args):
                 with self.assertRaises(exception):
                     panda.assign(*args)
+
+    def test_assign_table_returns(self, mocksock):
+        """Table assignment returns expected values"""
+        panda = self.panda_factory()
+        panda.connect()
+        returns = {
+
+            # Successful assignment
+            #
+            #   * Returns None
+            #   * Defaults to "<" operator
+            #   * "<<", "<B", "<<B" operators supported
+            #   * Numeric values accepted
+            #
+            ("PGEN1.TABLE", ("1","2","3")): None,
+            ("PGEN1.TABLE", ("1","2","3"), "<"): None,
+            ("PGEN1.TABLE", ("1","2","3"), "<<"): None,
+            ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA","AQAAAAIAAAADAAAA"), "<B"): None,
+            ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA","AQAAAAIAAAADAAAA"), "<<B"): None,
+            ("PGEN1.TABLE", (1,2,3)): None,
+
+        }    
+        for args, return_ in returns.items():
+            with self.subTest(args=args):
+                returned = panda.assign_table(*args)
+                self.assertEqual(returned, return_)
+
+    def test_assign_table_exceptions(self, mocksock):
+        """Table assignment raises expected exceptions"""
+        panda = self.panda_factory()
+        panda.connect()
+        exceptions = {
+
+            # Failed assignment
+            ("PGEN1.TABLE",("foo","bar","baz")): RuntimeError,
+
+            # Bad operator
+            ("PGEN1.TABLE", ("1","2","3"), "+"): ValueError
+
+        }
+        for args, exception in exceptions.items():
+            with self.subTest(args=args):
+                with self.assertRaises(exception):
+                    panda.assign_table(*args)
+
 
 @unittest.mock.patch(
     "pandaboxlib.socket.socket",
