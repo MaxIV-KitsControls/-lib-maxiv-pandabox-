@@ -481,11 +481,11 @@ class TestPandALegacy(unittest.TestCase):
                 with self.assertRaises(exception):
                     panda.numquery(cmd)             # Assert exception
 
-    def test_save_config_output(self, mocksock):
-        """Save design output"""
+    def test_save_config(self, mocksock):
+        """Save design produces expected output"""
         panda = self.panda_factory()
         panda.connect_to_panda()
-        path = "test_save_design_output"
+        path = "test_save_config"
         path_design = f"{path}.design.txt"
         path_output = f"{path}.output.txt"
         with open(path_design,"wt") as file:
@@ -496,7 +496,7 @@ class TestPandALegacy(unittest.TestCase):
         os.remove(path_output)
 
     def test_load_config(self, mocksock):
-        """Load design"""
+        """Load design succeeds"""
         panda = self.panda_factory()
         panda.connect_to_panda()
         path = "test_load_design.txt"
