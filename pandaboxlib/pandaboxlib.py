@@ -413,16 +413,39 @@ class PandA:
         else:
             raise ValueError(f"Unknown response ('{response}')")
 
-    def _assign_table(self, target, values, operator="<"):
-        """Assign table value to target
+    def assign_table(self, target: str, values: typing.Iterable, operator: str="<") -> typing.NoReturn:
+        """Assign table values to target
 
-        * ``values`` must be an iterable
-        * Successful assignment returns ``None``
+        Assign table values ``values`` to table ``target``. ``target``
+        is a valid block field or attribute of table type. ``values`` is an 
+        iterable of table values.
+
+        The optional ``operator`` keyword argument specifies the table value
+        assignment operator;
+
+        * ``<``: Normal table write, overwrite table
+        * ``<<``: Normal table write, append table
+        * ``<B``: Normal table write, overwrite table
+        * ``<<B``: Normal table write, append table
+
+        If not supplied, the default operator is ``<``.
+
+        Successful assignment returns ``None``. Failed assignment raises
+        ``RuntimeError``.
+
+        :param str target: Target field or attribute
+        :param values: Table values to assign
+        :type values: iterable of str or numeric
+        :param str operator: Assignment operator
+        :rtype: None
+        :raises RuntimeError: On failed assignment
 
         """
-        value = "\n".join(values)
+        
+        value = "\n"                     # Newline after operator
+        value += "\n".join((str(value) for value in values))
         value += "\n"                    # Blank line termination
-        return self._assign(target, value, operator)
+        return self.assign(target, value, operator)
 
     # ---- Legacy interface -------------------------------- #
 
