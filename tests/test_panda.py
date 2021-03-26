@@ -645,11 +645,13 @@ class TestPandALegacy(unittest.TestCase):
             b"!PGEN1.OUT\n!PGEN2.OUT\n.\n": 2,
             b".\n": 0
         }
+        assert b"*CAPTURE?\n" not in mocksock._responses    # No response clobber
         for response, return_ in returns.items():
             with self.subTest(response=response):
                 mocksock._responses[b"*CAPTURE?\n"] = response
                 returned = panda.get_number_channels()
                 self.assertEqual(returned, return_)
+        del mocksock._responses[b"*CAPTURE?\n"]             # Reset responses
 
 
 if __name__ == "__main__":
