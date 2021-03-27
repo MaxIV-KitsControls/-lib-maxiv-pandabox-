@@ -18,6 +18,8 @@ import unittest.mock
 import mocksocket
 import filecmp
 import os
+import io
+import re
 
 
 class MockSocketFactory:
@@ -130,6 +132,7 @@ mock_socket_responses = {
         b"!*METADATA.LABEL_BLAH1=\n"
         b".\n"
     ),
+    b"*CHANGES=S\n": b"OK\n",
     b"*METADATA.YAML?\n": (
         b".\n"
     ),
@@ -163,6 +166,25 @@ class TestPandA(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.panda_factory = PandAFactory()
+        cls.design = (
+            "*ECHO PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server?\n"
+            "QDEC1.B.DELAY=0\n"
+            "QDEC2.B.DELAY=0\n"
+            "QDEC3.B.DELAY=0\n"
+            "QDEC4.B.DELAY=0\n"
+            "QDEC1.B=ZERO\n"
+            "QDEC2.B=ZERO\n"
+            "QDEC3.B=ZERO\n"
+            "QDEC4.B=ZERO\n"
+            "PCOMP4.TABLE<B\n"
+            "\n"
+            "PGEN1.TABLE<B\n"
+            "AQAAAAIAAAADAAAA\n"
+            "\n"
+            "*METADATA.YAML<\n"
+            "\n"
+            "*METADATA.LABEL_BLAH1=\n"
+        )
 
     def test_init_assign_host(self, mocksock):
         """Host assignment at initialization"""
@@ -346,6 +368,68 @@ class TestPandA(unittest.TestCase):
             with self.subTest(args=args):
                 with self.assertRaises(exception):
                     panda.assign_table(*args)
+
+    def test_dump_design_output(self, mocksock):
+        """Dump design produces expected output"""
+        panda = self.panda_factory()
+        panda.connect()
+        with io.StringIO() as file:
+            panda.dump_design(file)
+            self.assertEqual(
+                file.getvalue(),
+                self.design
+            )
+
+    def test_dump_design_reproducibility(self, mocksock):
+        """Dump design produces reproducible output"""
+        panda = self.panda_factory()
+        panda.connect()
+        dumps = ["", ""]
+        for i_dump in range(len(dumps)):
+            mocksock.reset_mock()
+            with self.subTest(i_dump=i_dump):
+                with io.StringIO() as file:
+                    panda.dump_design(file)
+                    dumps[i_dump] = file.getvalue()
+                    # 
+                    # Dumping the PandABox design typically invovles sending 
+                    # ``*CHANGES`` queries. Repeated ``*CHANGES`` queries will 
+                    # however likely not produce the same response. As such, 
+                    # dump implementations relying on ``*CHANGES`` queries risk
+                    # producing incomplete dumps.
+                    # 
+                    # In order to ensure a full design dump, should test that 
+                    # repeated dumps produce the same response. This is however 
+                    # difficult to mock due to the stateless nature of the mock 
+                    # socket.
+                    # 
+                    # As such, only option for testing is to detect ``*CHANGES``
+                    # queries sent over the socket, and assert subsequent 
+                    # resetting commands (e.g. ``*CHANGES=S`` or reconnect).
+                    #
+                    calls = mocksock.method_calls
+                    sent = [call[1][0] for call in calls if "send" in call[0]]
+                    sent = (b"".join(sent)).decode()
+                    changes_query_sent = re.search(r"\*CHANGES[^=\?]*\?", sent)
+                    if changes_query_sent:
+                        changes_reset = re.search(r"\*CHANGES[^=\?]*=S", sent)
+                        connection_calls = [
+                            call[0] for call in calls
+                            if ("connect" in call[0])
+                            or ("close" in call[0])
+                        ]
+                        reconnected = (
+                            ("close" in connection_calls) and 
+                            ("connect" in connection_calls) and 
+                            bool(
+                                connection_calls.index(
+                                    "connect",
+                                    connection_calls.index("close")
+                                )
+                            )
+                        )
+                        self.assertTrue(changes_reset or reconnected)
+        self.assertEqual(*dumps)     # Meanlingless due to stateless mock socket
 
 
 @unittest.mock.patch(
