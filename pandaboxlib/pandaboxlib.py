@@ -447,7 +447,128 @@ class PandA:
         value += "\n"                    # Blank line termination
         return self.assign(target, value, operator)
 
-    # ---- Legacy interface -------------------------------- #
+    def _dump_value(self, value):
+        """Format value responses for dump"""
+        return f"{value}\n"
+
+    def _dump_table(self, table, encoding="base64"):
+        """Format table for dump
+        
+        :param str table: Table field target
+        
+        """
+        output = ""
+        operators = {
+            "base64": "<B",
+            "ascii": "<"
+        }
+        if encoding not in operators:
+            raise ValueError(f"Unknown table value encoding('{encoding}')")
+        output += f"{table}{operators[encoding]}\n"
+        attributes = {
+            "base64": ".B",
+            "ascii": ""
+        }
+        rows = self.query_(f"{table}{attributes[encoding]}?")
+        for row in rows:
+            output += f"{row}\n"
+        output += "\n"                      # Blank line termination
+        return output
+
+    def dump_design(self, file: typing.TextIO) -> typing.NoReturn:
+        """Dump current design to file
+
+        Dump current design to the writable text file ``file``. The contents of
+        the output file are simply the assignment commands required to recover
+        the current design.
+
+        The design is considered to consist of;
+
+        * Block field values
+        * Block field attribute values which contribute to ``*CHANGES.ATTR?`` [#]_
+        * Block and system metadata field values
+
+        N.b. Current bits, position and polled read values are _not_ considered
+        part of the design, and are thus not included in the dump.
+
+        .. [#] See https://pandablocks-server.readthedocs.io/en/latest/fields.html#summary-of-attributes
+
+        :param TextIO file: Ouput file
+        :rtype: None
+        
+        """
+
+        # Declare output
+        output = ""              # Write at end to avoid partial design dumps
+        
+        # Dump identification string
+        #
+        #   Dumped designs are defined within the context of the currently
+        #   running firmware; i.e. they depend on the blocks exposed by the
+        #   installed PandABlocks-FPGA app. Designs cannot therefore be
+        #   guaraneteed to load correctly on PandABox units running different
+        #   firmware as different blocks may be exposed.
+        #
+        #   The system identification string — containing the current firmware
+        #   version — is therefore dumped in order to provide context for the 
+        #   design. It is envisaged that design loading routines may use this
+        #   to evaluate compatibility before attemping to load a design.
+        #
+        #   The identification string is dumped as an ``*ECHO?``` query to be
+        #   a valid, albeit transparent, commad.
+        #
+        idn = self.query_("*IDN?")
+        echo = f"*ECHO {idn}?"
+        output += self._dump_value(echo)
+
+        # Reset changes
+        #
+        #   ``*CHANGES?`` queries only return the changes since last
+        #   ``*CHANGES?`` query on the connection, _or_ all values for the first
+        #   query on the connection. To ensure full design is dumped, must
+        #   reset the changes state so as to effectly be first ``*CHANGES?``
+        #   query.
+        #
+        self.assign("*CHANGES","S")
+
+        # Dump field attributes
+        attrs = self.query_("*CHANGES.ATTR?")
+        for attr in attrs:
+            output += self._dump_value(attr)
+
+        # Dump field values
+        fields = self.query_("*CHANGES.CONFIG?")
+        for field in fields:
+            output += self._dump_value(field)
+
+        # Dump table field values (base64 encoded)
+        #
+        #   N.b. ``*CHANGES.TABLE?`` only returns table fields which have
+        #   changed. Table values must be retrieved separately.
+        #
+        tables = self.query_("*CHANGES.TABLE?")
+        for table in tables:
+            output += self._dump_table(table.rstrip("<"))
+
+        # Dump metadata
+        #
+        #   N.b. Both single value and table fields are returned
+        #   N.b.b. Metadata table values are always ASCII encoded
+        #
+        metadata = self.query_("*CHANGES.METADATA?")
+        for metadatum in metadata:
+            if metadatum.endswith("<"):
+                output += self._dump_table(
+                    metadatum.rstrip("<"),
+                    encoding="ascii"  
+                )
+            else:
+                output += self._dump_value(metadatum)
+
+        # Write output
+        file.write(output)
+
+    # Legacy interface
 
     def connect_to_panda(self):
         return self.connect()
