@@ -219,6 +219,7 @@ class TestPandA(unittest.TestCase):
             #   * Stripped of "!" prefix
             #   * Stripped of "\n" suffix
             #   * Stripped of "." suffix
+            #   * Zero-length responses return empty iterable
             #   * "?" suffix appended if necessary
             #
             "*CHANGES.ATTR?": [
@@ -232,7 +233,8 @@ class TestPandA(unittest.TestCase):
                 "QDEC2.B.DELAY=0",
                 "QDEC3.B.DELAY=0",
                 "QDEC4.B.DELAY=0"
-            ]
+            ],
+            "PCOMP4.TABLE.B?": []
 
         }
         for cmd, return_ in returns.items():

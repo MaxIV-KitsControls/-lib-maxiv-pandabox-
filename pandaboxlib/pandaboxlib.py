@@ -340,7 +340,7 @@ class PandA:
 
     def _response_is_multivalue(self, response):
         """Test for multi value response"""
-        return response.startswith(self._response_multivalue[0])
+        return response.startswith(self._response_multivalue)
 
     def query_(self, target: str) -> typing.Union[str,list]:
         r"""Query target value
