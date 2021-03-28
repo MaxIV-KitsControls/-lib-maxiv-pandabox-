@@ -429,7 +429,7 @@ class TestPandA(unittest.TestCase):
                             )
                         )
                         self.assertTrue(changes_reset or reconnected)
-        self.assertEqual(*dumps)     # Meanlingless due to stateless mock socket
+        self.assertEqual(*dumps)     # Meaningless due to stateless mock socket
 
 
 @unittest.mock.patch(
