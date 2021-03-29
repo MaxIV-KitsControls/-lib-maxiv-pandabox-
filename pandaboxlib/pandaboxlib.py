@@ -457,7 +457,7 @@ class PandA:
         """Format value responses for dump"""
         return f"{value}\n"
 
-    def _dump_table(self, table: str, encoding="base64") -> str:
+    def _dump_table(self, target: str, encoding="base64") -> str:
         """Format table for dump
         
         :param str table: Table field target
@@ -470,12 +470,12 @@ class PandA:
         }
         if encoding not in operators:
             raise ValueError(f"Unknown table value encoding('{encoding}')")
-        output += f"{table}{operators[encoding]}\n"
+        output += f"{target}{operators[encoding]}\n"
         attributes = {
             "base64": ".B",
             "ascii": ""
         }
-        rows = self.query_(f"{table}{attributes[encoding]}?")
+        rows = self.query_(f"{target}{attributes[encoding]}?")
         for row in rows:
             output += f"{row}\n"
         output += "\n"                      # Blank line termination
