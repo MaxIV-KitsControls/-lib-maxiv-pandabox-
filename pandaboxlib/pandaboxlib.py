@@ -345,7 +345,7 @@ class PandA:
         """Test for multi value response"""
         return response.startswith(self._response_multivalue)
 
-    def query_(self, target: str) -> typing.Union[str,list]:
+    def query_(self, target: str) -> typing.Union[str, list]:
         r"""Query target value
 
         Interrogate ``target`` and returns current value.
@@ -419,7 +419,7 @@ class PandA:
         else:
             raise ValueError(f"Unknown response ('{response}')")
 
-    def assign_table(self, target: str, values: typing.Iterable, operator: str="<") -> typing.NoReturn:
+    def assign_table(self, target: str, values: typing.Sequence, operator: str="<") -> typing.NoReturn:
         """Assign table values to target
 
         Assign table values ``values`` to table ``target``. ``target``
@@ -453,11 +453,11 @@ class PandA:
         value += "\n"                    # Blank line termination
         return self.assign(target, value, operator)
 
-    def _dump_value(self, value):
+    def _dump_value(self, value: str) -> str:
         """Format value responses for dump"""
         return f"{value}\n"
 
-    def _dump_table(self, table, encoding="base64"):
+    def _dump_table(self, table: str, encoding="base64") -> str:
         """Format table for dump
         
         :param str table: Table field target
