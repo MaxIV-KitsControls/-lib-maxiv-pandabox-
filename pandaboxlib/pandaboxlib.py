@@ -213,6 +213,9 @@ class PandA:
     _response_value = "OK ="
     _response_error = "ERR "
     _response_multivalue = ("!",".")
+    _operator_query = "?"
+    _operator_assign = "="
+    _operator_assign_table = ("<", "<<", "<B", "<<B")
 
     def __init__(self, host, port=8888):
         """Initializer"""
@@ -396,7 +399,10 @@ class PandA:
         :raises RuntimeError: On failed assignment
 
         """
-        operators = ("=", "<", "<<", "<B", "<<B")
+        operators = (
+            self._operator_assign,
+            *self._operator_assign_table
+        )
         if operator not in operators:
             raise ValueError(f"Unknown operator ('{operator}')")
         self._send(f"{target}{operator}{value}")
