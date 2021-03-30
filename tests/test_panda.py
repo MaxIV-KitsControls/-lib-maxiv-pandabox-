@@ -123,6 +123,7 @@ mock_socket_responses = {
     b"PCOMP4.TABLE.B?\n": (
         b".\n"
     ),
+    b"PCOMP4.TABLE<B\n\n": b"OK\n",
     b"PGEN1.TABLE.B?\n": (
         b"!AQAAAAIAAAADAAAA\n"
         b".\n"
@@ -151,6 +152,7 @@ mock_socket_responses = {
     b"PULSE1.DELAY?\n": b"OK =2.5\n",
     b"PULSE1.DELAY.UNITS?\n": b"OK =s\n",
     b"PULSE1.DELAY=3.5\n": b"OK\n",
+    b"INENC1.VAL.UNITS=\n": b"OK\n",
     b"FOO.*?\n": b"ERR No such block\n"
 }
 mock_socket_factory = MockSocketFactory(responses=mock_socket_responses)
@@ -291,15 +293,17 @@ class TestPandA(unittest.TestCase):
         panda.connect()
         returns = {
 
-            # Successful assignment
-            #
-            #   * Returns None
-            #   * "=" operator optional
-            #   * Numeric values accepted
-            #
-            ("TTLIN1.TERM", "50-Ohm"): None,
+            # Returns None
             ("TTLIN1.TERM", "50-Ohm", "="): None,
-            ("PULSE1.DELAY", 3.5): None
+
+            # Optional operator
+            ("TTLIN1.TERM", "50-Ohm"): None,
+
+            # Numeric value
+            ("PULSE1.DELAY", 3.5, "="): None,
+
+            # Empty value
+            ("INENC1.VAL.UNITS", "", "="): None
 
         }    
         for args, return_ in returns.items():
@@ -331,19 +335,26 @@ class TestPandA(unittest.TestCase):
         panda.connect()
         returns = {
 
-            # Successful assignment
-            #
-            #   * Returns None
-            #   * Defaults to "<" operator
-            #   * "<<", "<B", "<<B" operators supported
-            #   * Numeric values accepted
-            #
-            ("PGEN1.TABLE", ("1","2","3")): None,
+            # Returns None
             ("PGEN1.TABLE", ("1","2","3"), "<"): None,
+
+            # Defaults to "<" operator
+            ("PGEN1.TABLE", ("1","2","3")): None,
+
+            # Append operator
             ("PGEN1.TABLE", ("1","2","3"), "<<"): None,
+
+            # Base64 operator
             ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA","AQAAAAIAAAADAAAA"), "<B"): None,
+
+            # Append base64 operator
             ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA","AQAAAAIAAAADAAAA"), "<<B"): None,
+
+            # Numeric values
             ("PGEN1.TABLE", (1,2,3)): None,
+
+            # Empty values
+            ("PCOMP4.TABLE", (), "<B"): None
 
         }    
         for args, return_ in returns.items():
