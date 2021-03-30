@@ -108,6 +108,10 @@ mock_socket_responses = {
         b"!QDEC4.B.DELAY=0\n"
         b".\n"
     ),
+    b"QDEC1.B.DELAY=0\n": b"OK\n",
+    b"QDEC2.B.DELAY=0\n": b"OK\n",
+    b"QDEC3.B.DELAY=0\n": b"OK\n",
+    b"QDEC4.B.DELAY=0\n": b"OK\n",
     b"*CHANGES.CONFIG?\n": (
         b"!QDEC1.B=ZERO\n"
         b"!QDEC2.B=ZERO\n"
@@ -115,6 +119,10 @@ mock_socket_responses = {
         b"!QDEC4.B=ZERO\n"
         b".\n"
     ),
+    b"QDEC1.B=ZERO\n": b"OK\n",
+    b"QDEC2.B=ZERO\n": b"OK\n",
+    b"QDEC3.B=ZERO\n": b"OK\n",
+    b"QDEC4.B=ZERO\n": b"OK\n",
     b"*CHANGES.TABLE?\n": (
         b"!PCOMP4.TABLE<\n"
         b"!PGEN1.TABLE<\n"
@@ -128,15 +136,18 @@ mock_socket_responses = {
         b"!AQAAAAIAAAADAAAA\n"
         b".\n"
     ),
+    b"PGEN1.TABLE<B\nAQAAAAIAAAADAAAA\n\n": b"OK\n",
     b"*CHANGES.METADATA?\n": (
         b"!*METADATA.YAML<\n"
         b"!*METADATA.LABEL_BLAH1=\n"
         b".\n"
     ),
-    b"*CHANGES=S\n": b"OK\n",
     b"*METADATA.YAML?\n": (
         b".\n"
     ),
+    b"*METADATA.YAML<\n\n": b"OK\n",
+    b"*METADATA.LABEL_BLAH1=\n": b"OK\n",
+    b"*CHANGES=S\n": b"OK\n",
     b"ADC.*?\n": (
         b"!OUT 0 pos_out\n"
         b".\n"
@@ -153,6 +164,76 @@ mock_socket_responses = {
     b"PULSE1.DELAY.UNITS?\n": b"OK =s\n",
     b"PULSE1.DELAY=3.5\n": b"OK\n",
     b"INENC1.VAL.UNITS=\n": b"OK\n",
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000001 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000001 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000001 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000001 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 0.0.1 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 0.0.1 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 0.1.0 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 0.1.0 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 1.0.0 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 1.0.0 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.3 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.3 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.1.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.1.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 3.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 3.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server\n"
+    ),
+    (
+        b"*ECHO"
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Foo Server?\n"
+    ): (
+        b"OK ="
+        b" PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Foo Server\n"
+    ),
     b"FOO.*?\n": b"ERR No such block\n"
 }
 mock_socket_factory = MockSocketFactory(responses=mock_socket_responses)
@@ -441,6 +522,103 @@ class TestPandA(unittest.TestCase):
                         )
                         self.assertTrue(changes_reset or reconnected)
         self.assertEqual(*dumps)     # Meaningless due to stateless mock socket
+
+    def test_load_design(self, mocksock):
+        """Load design succeeds"""
+        panda = self.panda_factory()
+        panda.connect()
+        with io.StringIO(self.design) as file:
+            panda.load_design(file)
+        #
+        # Ideally, would check PandABox state here to assert design load,
+        # but this would require stateful mock socket.
+        #
+        # Instead assert the data sent over mock socket. Must check all
+        # possible socket send methods to cover all possible implementations.
+        #
+        calls = mocksock.method_calls
+        send_calls = filter(lambda call: "send" in call[0], calls)
+        send_bytes = b"".join(
+            [ call[1][0] for call in send_calls ]       # Call first arguments
+        )
+        self.assertIn(self.design.encode(), send_bytes)
+
+    def test_load_design_fw_validation_exceptions(self, mocksock):
+        """Load design firmware validation raises expected exceptions"""
+        panda = self.panda_factory()
+        panda.connect()
+        exceptions = {
+            (
+                "FPGA: 0.0.0 00000000 00000000",
+                "FPGA: 0.0.0 00000000 00000001"
+            ): ValueError,                      # Different FPGA support version
+            (
+                "FPGA: 0.0.0 00000000 00000000",
+                "FPGA: 0.0.0 00000001 00000000"
+            ): ValueError,                      # Different FPGA build version
+            (
+                "FPGA: 0.0.0 00000000 00000000",
+                "FPGA: 0.0.1 00000000 00000000"
+            ): ValueError,                      # Different FPGA patch version
+            (
+                "FPGA: 0.0.0 00000000 00000000",
+                "FPGA: 0.1.0 00000000 00000000"
+            ): ValueError,                      # Different FPGA minor version
+            (
+                "FPGA: 0.0.0 00000000 00000000",
+                "FPGA: 1.0.0 00000000 00000000"
+            ): ValueError                      # Different FPGA major version
+        }
+        for (old, new), exception in exceptions.items():
+            with self.subTest(new=new):
+                with io.StringIO(self.design.replace(old,new)) as file:
+                    with self.assertRaises(exception):
+                        panda.load_design(file)
+                    #
+                    # Can envisage situation in which wish to force design
+                    # load attempt despite mismatched firmware versions.
+                    #
+                    # No guarantee that forced design load will succeed, so
+                    # simply assert the data sent over mock socket. Must check 
+                    # all possible socket send methods to cover all possible
+                    # implementations.
+                    #
+                    mocksock.reset_mock()
+                    panda.load_design(file, force=True)
+                    calls = mocksock.method_calls
+                    send_calls = filter(lambda call: "send" in call[0], calls)
+                    send_bytes = b"".join(
+                        [ call[1][0] for call in send_calls ]       # First args
+                    )
+                    self.assertIn(file.getvalue().encode(), send_bytes)
+
+    def test_load_design_fw_validation_warnings(self, mocksock):
+        """Load design firmware validation raises expected warnings"""
+        panda = self.panda_factory()
+        panda.connect()
+        warnings = {
+            (
+                "SW: 2.0.2",
+                "SW: 2.0.3"
+            ): Warning,                     # Different server patch version
+            (
+                "SW: 2.0.2",
+                "SW: 2.1.2"
+            ): Warning,                     # Different server minor version
+            (
+                "SW: 2.0.2",
+                "SW: 3.0.2"
+            ): Warning,                     # Different server major version
+            (
+                "rootfs: Test Server",
+                "rootfs: Foo Server"
+            ): Warning                      # Different rootfs version
+        }
+        for (old, new), warning in warnings.items():
+            with self.subTest(new=new):
+                with io.StringIO(self.design.replace(old,new)) as file:
+                    with self.assertWarns(warning):
+                        panda.load_design(file)
 
 
 @unittest.mock.patch(
