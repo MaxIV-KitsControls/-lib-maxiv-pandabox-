@@ -7,6 +7,8 @@ KITS @ MAX-IV 2018-05-25.
 import socket
 import sys
 import typing
+import re
+import warnings
 
 # Use standard python logging for debug output.
 import logging
@@ -572,6 +574,172 @@ class PandA:
 
         # Write output
         file.write(output)
+
+    def _assert_firmware_versions(self, fw1: dict, fw2: dict) -> typing.NoReturn:
+        """Assert firmware compatibility
+        
+        :param dict fw*: Firmware versions as dict of strings
+        :rtype: None
+        :raises: ValueError on mismatch of required versions
+        
+        """
+        exceptions = (
+            "fpga_major",
+            "fpga_minor",
+            "fpga_patch",
+            "fpga_build",
+            "fpga_supporting"
+        )
+        warnings_ = (
+            "server_major",
+            "server_minor",
+            "server_patch",
+            "rootfs"
+        )
+        for key in fw1:
+            if (fw1[key] != fw2[key]):
+                if key in exceptions:
+                    raise ValueError(
+                        "Incompatible firmware versions"
+                        f" ({key}: {fw1[key]} != {fw2[key]})"
+                    )
+                elif key in warnings_:
+                    warnings.warn(
+                        Warning(
+                            "Firmware versions differ"
+                            f" ({key}: {fw1[key]} != {fw2[key]})"
+                        )
+                    )
+
+    def _parse_firmware_versions(self, idn: str) -> dict:
+        """Parse firmware versions from system identification string
+        
+        :param str idn: Identification string
+        :return: Firmware version numbers
+        :rtype: dict
+        
+        """
+        pattern = (
+            r"PandA SW: (?P<server_major>\d+)\.(?P<server_minor>\d+)\.(?P<server_patch>\d+) "
+            r"FPGA: (?P<fpga_major>\d+)\.(?P<fpga_minor>\d+)\.(?P<fpga_patch>\w+)"
+            r" (?P<fpga_build>\w{8}) (?P<fpga_supporting>\w{8}) "
+            r"rootfs: (?P<rootfs>[^?=<\n]*)"
+        )
+        return re.search(pattern, idn).groupdict()
+
+    def _command_is_query(self, cmd: str) -> bool:
+        """Test for query command"""
+        return self._operator_query in cmd
+
+    def _command_is_assign(self, cmd: str) -> bool:
+        """Test for assignment command"""
+        return self._operator_assign in cmd
+
+    def _command_is_assign_table(self, cmd: str) -> bool:
+        """Test for table assignment command"""
+        return self._operator_assign_table[0] in cmd
+
+    def _parse_query(self, cmd: str) -> str:
+        """Parse target from query command"""
+        return cmd.split(self._operator_query)[0]
+
+    def _parse_assign(self, cmd: str) -> typing.Tuple[str, str]:
+        """Parse target and value from assignment command"""
+        return cmd.split(self._operator_assign)
+
+    def _parse_assign_table(self, cmd: str) -> typing.Tuple[str, list, str]:
+        """Parse target, operator and values from table assignment command"""
+        lines = cmd.splitlines()
+        target, op0, op1 = lines[0].partition(self._operator_assign_table[0])
+        operator = op0 + op1
+        values = lines[1:-1]          # 1 is target & op, -1 is blank terminator
+        return (target, values, operator)
+
+    def load_design(self, file: typing.TextIO, force: bool=False) -> typing.NoReturn:
+        """Load design from file
+
+        Load the design in the readable text file ``file``. The contents of the
+        file should be the assignment commands required to implement the design.
+        It is recommended that the contents be generated using
+        :py:meth:`PandA.dump_design`.
+
+        Designs are defined within the context of a specific firmware version;
+        i.e. they depend on the blocks exposed by the PandABlocks-FPGA app.
+        Designs cannot therefore be guaraneteed to load correctly on PandABox
+        units running different firmware versions as different blocks may be
+        exposed.
+
+        To mitigate this, :py:meth:`PandA.load_design` attempts to validate the
+        firmware version of the design described in ``file`` against the
+        firmware version deployed on the PandABox. The firmware version required
+        by the design is defined by an identification string (in the same format
+        as returned by the ``*IDN?`` query) contained in the first line of
+        ``file``. The firmware version deployed on the PandABox is queried with
+        an ``*IDN?`` query.
+        
+        A ``ValueError`` is raised and loading is aborted if any of the
+        following firmware versions differ:
+
+        * FPGA major version
+        * FPGA minor version
+        * FPGA patch version
+        * FPGA build version
+        * FPGA supporting version
+
+        Warnings are instead issued if any of the following firmware versions
+        differ:
+
+        * Software major version
+        * Software minor version
+        * Software patch version
+        * Root filesystem description
+
+        As these firmware packages do not directly affect the blocks exposed,
+        design loading will still be attempted.
+
+        Firmware validation can be disabled using the ``force=True`` keyword
+        argument. Do not be surprised however if the design fails to load
+        successfully…
+        
+        :param TextIO file: Design file
+        :param bool force: Disable firmware validation
+        :rtype: None
+
+        """
+
+        # Assert firmware versions
+        if not force:
+            fw_design = self._parse_firmware_versions(file.readline())
+            fw_panda = self._parse_firmware_versions(self.query_("*IDN?"))
+            self._assert_firmware_versions(fw_design, fw_panda)
+
+        # Load design
+        #
+        #   Whilst in principle could send commands in design file directly over
+        #   socket, this bypasses the comms methods (``query_``, ``assign``,
+        #   ``assign_table```) and their response validations, thereby
+        #   effectively opening a second comms channel to potentially debug.
+        #
+        #   Instead, probably better practice to parse design file and use the
+        #   existing comms methods.
+        #
+        file.seek(0)                            # Send firmware echo for logging
+        for line in file:
+            if self._command_is_query(line):
+                target = self._parse_query(line.rstrip())
+                self.query_(target)
+            elif self._command_is_assign(line):
+                target, value = self._parse_assign(line.rstrip())
+                self.assign(target, value)
+            elif self._command_is_assign_table(line):
+                lines = line
+                while line.rstrip():
+                    line = next(file)
+                    lines += line
+                target, values, operator = self._parse_assign_table(lines)
+                self.assign_table(target, values, operator)
+            else:
+                raise ValueError(f"Unknown command type ('{line}')")
 
     # Legacy interface
 
