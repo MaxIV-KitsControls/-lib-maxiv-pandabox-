@@ -449,8 +449,7 @@ class PandA:
         """
         
         value = "\n"                     # Newline after operator
-        value += "\n".join((str(value) for value in values))
-        value += "\n"                    # Blank line termination
+        value += "".join((f"{value}\n" for value in values))
         return self.assign(target, value, operator)
 
     def _dump_value(self, value: str) -> str:
