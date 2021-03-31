@@ -620,6 +620,38 @@ class TestPandA(unittest.TestCase):
                     with self.assertWarns(warning):
                         panda.load_design(file)
 
+    def test_remote_disconnect_exceptions(self, mocksock):
+        """Remote disconnection raises expected exceptions"""
+        panda = self.panda_factory()
+        calls = {
+            panda.query_: ("*IDN?",),
+            panda.assign: ("TTLIN1.TERM", "50-Ohm"),
+            panda.assign_table: ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA",) , "<B")
+        }
+        for call, args in calls.items():
+            with self.subTest(call=str(call),args=args):
+                panda.connect()
+                mocksock._connected_remote = False  # Mock remote disconnection
+                with self.assertRaises(BrokenPipeError):
+                    call(*args)
+                mocksock.close.assert_called()      # Assert system resources released
+                mocksock.reset_mock()
+
+    def test_local_disconnect_exceptions(self, mocksock):
+        """Local disconnection raises expected exceptions"""
+        panda = self.panda_factory()
+        calls = {
+            panda.query_: ("*IDN?",),
+            panda.assign: ("TTLIN1.TERM", "50-Ohm"),
+            panda.assign_table: ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA",) , "<B")
+        }
+        for call, args in calls.items():
+            with self.subTest(call=str(call),args=args):
+                panda.connect()
+                panda.disconnect()
+                with self.assertRaises((AttributeError, BrokenPipeError, OSError)):
+                    call(*args)
+
 
 @unittest.mock.patch(
     "pandaboxlib.socket.socket",
