@@ -16,6 +16,7 @@ import pandaboxlib
 import unittest
 import unittest.mock
 import mocksocket
+import socket
 import filecmp
 import os
 import io
@@ -650,6 +651,21 @@ class TestPandA(unittest.TestCase):
                 panda.connect()
                 panda.disconnect()
                 with self.assertRaises((AttributeError, BrokenPipeError, OSError)):
+                    call(*args)
+
+    def test_network_exceptions(self, mocksock):
+        """Network interrupt raises expected exceptions"""
+        panda = self.panda_factory()
+        panda.connect()
+        mocksock._network = False
+        calls = {
+            panda.query_: ("*IDN?",),
+            panda.assign: ("TTLIN1.TERM", "50-Ohm"),
+            panda.assign_table: ("PGEN1.TABLE", ("AQAAAAIAAAADAAAA",) , "<B")
+        }
+        for call, args in calls.items():
+            with self.subTest(call=str(call),args=args):
+                with self.assertRaises(socket.timeout):
                     call(*args)
 
 
