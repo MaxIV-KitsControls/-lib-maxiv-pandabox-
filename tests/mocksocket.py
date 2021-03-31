@@ -12,7 +12,8 @@ class MockSocket(unittest.mock.MagicMock):
     """
 
     _buffer = None
-    _connected = False
+    _connected_local = False
+    _connected_remote = False
 
     _side_effect_methods = (
         "connect",
@@ -91,14 +92,18 @@ class MockSocket(unittest.mock.MagicMock):
         self._buffer = bytearray()
 
     def _connect(self, address):
-        self._connected = True
+        """Mock socket connect method"""
+        self._connected_local = True
+        self._connected_remote = True
 
     def _close(self):
-        self._connected = False
+        """Mock socket close method"""
+        self._connected_local = False
+        self._connected_remote = False
 
     def _send(self, bytes_, *args, **kwargs):
         """Mock socket send method"""
-        if not self._connected:
+        if not (self._connected_local and self._connected_remote):
             raise BrokenPipeError("[Errno 32] Broken pipe")
         if bytes_ in self._responses:
             self._buffer += self._responses[bytes_]
@@ -109,12 +114,15 @@ class MockSocket(unittest.mock.MagicMock):
     def _sendall(self, bytes_, *args, **kwargs):
         """Mock socket sendall method"""
         self._send(bytes_, *args, **kwargs)
-        return None             # All bytes sent
+        return None                                         # All bytes sent
 
     def _recv(self, bufsize, *args, **kwargs):
         """Mock socket recv method"""
-        if not self._connected:
+        if not self._connected_local:
             raise OSError("[Errno 107] Transport endpoint is not connected")
+        elif not self._connected_remote:
+            self._buffer = bytearray()                      # Return zero bytes
         ret = self._buffer
         self._buffer = bytearray()
         return ret
+
