@@ -35,15 +35,8 @@ class PandA:
         self._recv_buffer = ""
 
     def __del__(self):
-        """Finalizer/destructor
-
-        Actions:
-
-          * Close socket gracefully
-
-        """
-        if self._sock is not None:
-            self.disconnect_from_panda()
+        """Finalizer/destructor"""
+        self.disconnect()
 
     def connect(self):
         """Create socket connection to host"""
