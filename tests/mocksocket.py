@@ -20,7 +20,8 @@ class MockSocket(unittest.mock.MagicMock):
         "close",
         "send",
         "sendall",
-        "recv"
+        "recv",
+        "shutdown"
     )
 
     _responses = None
@@ -125,4 +126,12 @@ class MockSocket(unittest.mock.MagicMock):
         ret = self._buffer
         self._buffer = bytearray()
         return ret
+
+    def _shutdown(self, how):
+        """Mock socket shutdown method"""
+        if not self._connected_local:
+            raise OSError(
+                "OSError: [Errno 107] Transport endpoint is not connected"
+            )
+        self._connected_local = False
 
