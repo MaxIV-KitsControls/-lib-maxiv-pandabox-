@@ -56,13 +56,22 @@ class PandA:
             )
             timeout = 5                  # 5 second socket timeout
             self._sock.settimeout(timeout)
-            self._sock.connect((self.host, self.port))
+            try:
+                self._sock.connect((self.host, self.port))
+            except Exception as err:
+                self._sock = None
+                raise err.__class__(
+                    f"Error connecting to host ({self.host}:{self.port})"
+                ) from err
 
     def disconnect(self):
         """Close socket connection to host"""
         if self._sock is not None:
-            self._sock.shutdown(socket.SHUT_WR)
-            self._sock.close()
+            try:
+                self._sock.shutdown(socket.SHUT_WR)
+            except:
+                pass            # Attempt to shutdown connection failed 🤷
+            self._sock.close()  # Mark socket as closed to free resources
             self._sock = None
 
     def _send(self, cmd):
@@ -71,9 +80,21 @@ class PandA:
         Appends newline
 
         """
-        return self._sock.sendall(       # Should return None
-            f"{cmd}\n".encode()
-        )
+        try:
+            return self._sock.sendall(       # Should return None
+                f"{cmd}\n".encode()
+            )
+        except (
+            AttributeError,         # No socket
+            BrokenPipeError         # Local or remote disconnect
+        ) as err:
+            self.disconnect()
+            msg = (
+                f"Error sending data ('{cmd}') to host"
+                f" ({self.host}:{self.port}):"
+                " Not connected to host."
+            )
+            raise err.__class__(msg) from err
 
     def _recv(self):
         r"""Iterate over response lines
@@ -120,9 +141,26 @@ class PandA:
                 bufsize = 2**12
                 try:
                     byte_buffer = self._sock.recv(bufsize).decode()
-                except socket.timeout as err:       # Network issues…
-                    self.disconnect_from_panda()    # …close and abort!
-                    raise err
+                    if not byte_buffer:
+                        raise BrokenPipeError
+                except BrokenPipeError as err:          # Remote disconnect
+                    self.disconnect()
+                    msg = (
+                        "Error receiving data from host"
+                        f" ({self.host}:{self.port})"
+                        ": Connection closed by host."
+                    )
+                    raise err.__class__(msg) from err
+                except (
+                    AttributeError,                     # No socket
+                    OSError                             # Local disconnect
+                ) as err:
+                    msg = (
+                        "Error receiving data from host"
+                        f" ({self.host}:{self.port}):"
+                        " Not connected to host."
+                    )
+                    raise err.__class__(msg) from err
                 self._recv_buffer += str(byte_buffer)
 
             # Tokenize
