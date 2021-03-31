@@ -14,6 +14,7 @@ class MockSocket(unittest.mock.MagicMock):
     _buffer = None
     _connected_local = False
     _connected_remote = False
+    _network = True
 
     _side_effect_methods = (
         "connect",
@@ -106,6 +107,8 @@ class MockSocket(unittest.mock.MagicMock):
         """Mock socket send method"""
         if not (self._connected_local and self._connected_remote):
             raise BrokenPipeError("[Errno 32] Broken pipe")
+        elif not self._network:
+            raise socket.timeout
         if bytes_ in self._responses:
             self._buffer += self._responses[bytes_]
         else:
@@ -123,6 +126,8 @@ class MockSocket(unittest.mock.MagicMock):
             raise OSError("[Errno 107] Transport endpoint is not connected")
         elif not self._connected_remote:
             self._buffer = bytearray()                      # Return zero bytes
+        elif not self._network:
+            raise socket.timeout
         ret = self._buffer
         self._buffer = bytearray()
         return ret
