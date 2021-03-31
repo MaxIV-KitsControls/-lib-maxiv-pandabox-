@@ -84,6 +84,13 @@ class PandA:
             return self._sock.sendall(       # Should return None
                 f"{cmd}\n".encode()
             )
+        except socket.timeout as err:       # Timeout
+            msg = (
+                f"Error sending data ('{cmd}') to host"
+                f" ({self.host}:{self.port}):"
+                f" Connection timed out ({self._sock.gettimeout()} s)."
+            )
+            raise err.__class__(msg) from err
         except (
             AttributeError,         # No socket
             BrokenPipeError         # Local or remote disconnect
@@ -143,6 +150,13 @@ class PandA:
                     byte_buffer = self._sock.recv(bufsize).decode()
                     if not byte_buffer:
                         raise BrokenPipeError
+                except socket.timeout as err:           # Timeout
+                    msg = (
+                        "Error receiving data from host"
+                        f" ({self.host}:{self.port}):"
+                        f" Connection timed out ({self._sock.gettimeout()} s)."
+                    )
+                    raise err.__class__(msg) from err
                 except BrokenPipeError as err:          # Remote disconnect
                     self.disconnect()
                     msg = (
