@@ -55,8 +55,3 @@ or
 ```
 python3 -m pandaboxlib.version
 ```
-
-
-## Change Log
-2021-04-01 1.0.3 adds version.py, changes print to logger.debug
-
