@@ -9,6 +9,10 @@ import sys
 from .save_config import GetLines, read_response, save_state, save_table
 from .save_config import save_metatable, save_metadata
 
+# Use standard python logging for debug output.
+import logging
+logger = logging.getLogger(__name__)
+
 
 class PandA:
 
@@ -31,7 +35,7 @@ class PandA:
     def query(self, cmd):
         self.sock.sendall((cmd + '\n').encode())
         val = str(self.sock.recv(4096).decode())
-        print(val)
+        logger.debug("query %s returned %s" % (cmd, str(val).strip()))
         return val
 
     def query_value(self, cmd):
@@ -48,7 +52,7 @@ class PandA:
         val = self.query(cmd)
         val = val.split("=")[-1]
         val = self._num(val)
-        print(str(val))
+        logger.debug("numquery %s returned %s" % (cmd, str(val).strip()))
         return val
 
     def save_config(self, save_file):
