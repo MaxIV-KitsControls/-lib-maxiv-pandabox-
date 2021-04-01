@@ -1,7 +1,9 @@
-"""
-Class for the Pandabox communication.
-Class has no Tango dependence.
-KITS @ MAX-IV 2018-05-25.
+"""A client library for TCP socket-based communication with PandABox
+
+This module provides a core `PandA` class to handle all socket-based 
+communication with PandABox units over the interface provided by the
+``PandABlocks-server`` TCP server.
+
 """
 
 import socket
