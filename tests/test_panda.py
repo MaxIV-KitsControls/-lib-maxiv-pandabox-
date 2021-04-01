@@ -485,7 +485,7 @@ class TestPandA(unittest.TestCase):
                     panda.dump_design(file)
                     dumps[i_dump] = file.getvalue()
                     # 
-                    # Dumping the PandABox design typically invovles sending 
+                    # Dumping the PandABox design typically involves sending 
                     # ``*CHANGES`` queries. Repeated ``*CHANGES`` queries will 
                     # however likely not produce the same response. As such, 
                     # dump implementations relying on ``*CHANGES`` queries risk
@@ -827,7 +827,7 @@ class TestPandALegacy(unittest.TestCase):
             file.write(self.design)
         panda.load_config(path)
         #
-        # Ideally, would check pandabox state here to assert design load,
+        # Ideally, would check PandABox state here to assert design load,
         # but this would require more stateful mock socket.
         #
         # Instead assert the data sent over mock socket. Must check all

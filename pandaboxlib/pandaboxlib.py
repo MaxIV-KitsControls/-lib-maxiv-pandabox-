@@ -99,9 +99,9 @@ class PandA:
     def _recv(self):
         r"""Iterate over response lines
 
-        tl;dr: Generator for iteration over reponses
+        tl;dr: Generator for iteration over responses
 
-        As so eloquantly put by Gordon McMillan;
+        As so eloquently put by Gordon McMillan;
 
             Now if you think about that a bit, you’ll come to realize
             a fundamental truth of sockets: messages must either be
@@ -364,16 +364,16 @@ class PandA:
         #   Dumped designs are defined within the context of the currently
         #   running firmware; i.e. they depend on the blocks exposed by the
         #   installed PandABlocks-FPGA app. Designs cannot therefore be
-        #   guaraneteed to load correctly on PandABox units running different
+        #   guaranteed to load correctly on PandABox units running different
         #   firmware as different blocks may be exposed.
         #
         #   The system identification string — containing the current firmware
         #   version — is therefore dumped in order to provide context for the 
         #   design. It is envisaged that design loading routines may use this
-        #   to evaluate compatibility before attemping to load a design.
+        #   to evaluate compatibility before attempting to load a design.
         #
         #   The identification string is dumped as an ``*ECHO?``` query to be
-        #   a valid, albeit transparent, commad.
+        #   a valid, albeit transparent, command.
         #
         idn = self.query_("*IDN?")
         echo = f"*ECHO {idn}?"
@@ -384,7 +384,7 @@ class PandA:
         #   ``*CHANGES?`` queries only return the changes since last
         #   ``*CHANGES?`` query on the connection, _or_ all values for the first
         #   query on the connection. To ensure full design is dumped, must
-        #   reset the changes state so as to effectly be first ``*CHANGES?``
+        #   reset the changes state so as to effectively be first ``*CHANGES?``
         #   query.
         #
         self.assign("*CHANGES","S")
@@ -516,7 +516,7 @@ class PandA:
 
         Designs are defined within the context of a specific firmware version;
         i.e. they depend on the blocks exposed by the PandABlocks-FPGA app.
-        Designs cannot therefore be guaraneteed to load correctly on PandABox
+        Designs cannot therefore be guaranteed to load correctly on PandABox
         units running different firmware versions as different blocks may be
         exposed.
 
@@ -660,7 +660,7 @@ class PandA:
         # table < code position time1 time2
         pos_cmd = ['%d %d %d %d\n' % (code, pos, time1, time2) for pos in positions]
 
-        # < overwirte; << append
+        # < overwrite; << append
         # self.query('SEQ%d.TABLE<<\n'%(block_id)+''.join(pos_cmd))
         self.query('SEQ%d.TABLE<\n' % (block_id) + ''.join(pos_cmd))
 
