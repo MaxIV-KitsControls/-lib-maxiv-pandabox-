@@ -1,16 +1,42 @@
-Library to communicate with PandABox hardware.
+# lib-maxiv-pandaboxlib
 
-It is a python code that send requests to the TCP server running on the PandABox.
+A python library for communication with the [PandABox](https://ohwr.org/project/pandabox) platform.
 
+## About
 
-More documents and information on github repository:
+The primary interface to the FPGA block-based functionality of a PandABox is via the [PandABlocks-server](https://pandablocks-server.readthedocs.io/en/latest/index.html) TCP socket server. `lib-maxiv-pandaboxlib` is a synchronous, 'Avec-IO' python client library for this interface. If you are looking for a more modern 'Sans-IO' client library providing  asynchronous functionality, you may be interested in [PandABlock-client](https://pandablocks.github.io/PandABlocks-client/master/index.html) which is designed and maintained by the PandABlock-server developers.
 
-https://github.com/PandABlocks/PandABlocks-server
+## Installation
+
+Installation is currently only from source. Simply clone the repository and add the package to your python path;
+
+```shell
+$ git clone https://github.com/MaxIV-KitsControls/lib-maxiv-pandaboxlib.git
+$ PYTHONPATH=lib-maxiv-pandaboxlib python3
+```
+
+The library is contained in the main `pandaboxlib` module, which provides the core `PandA` class handling all interactions with PandABox units;
+
+```python
+>>> import pandaboxlib
+>>> panda = pandaboxlib.PandA("pandabox.maxiv.lu.se", 8888)
+>>> panda.query_("*IDN?")
+"OK =PandA SW: 2.0.2 FPGA: 0.0.0 00000000 00000000 rootfs: Test Server"
+>>> panda.assign("TTLIN1.TERM", "50-Ohm")
+>>> panda.assign_table("PGEN1.TABLE", (1,2,3), "<<")
+```
+
+## Documentation
+
+_WIP_
 
 ## Tests
-to run tests: `PYTHONPATH=src python3 -m pytest`
 
-You will need pytest>6 for this.
+Units tests are provided in the `tests` directory. To run the tests from the package root;
+
+```shell
+$ PYTHONPATH=tests python3 -m unittest --buffer tests/test_*.py
+```
 
 ## Versioning
 
@@ -34,6 +60,3 @@ python3 -m pandaboxlib.version
 ## Change Log
 2021-04-01 1.0.3 adds version.py, changes print to logger.debug
 
-
-## TODO
-- Document what must be installed to support the import mock in the test.
