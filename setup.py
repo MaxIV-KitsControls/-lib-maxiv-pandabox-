@@ -3,6 +3,7 @@ from setuptools import setup
 
 
 setup(name = "pandaboxlib",
+      version = "2.0.0",
       description = ("Library for socket-based communication with PandABox."),
       author = "KITS, MAX IV Laboratory",
       author_email = "kitscontrols@maxiv.lu.se",
