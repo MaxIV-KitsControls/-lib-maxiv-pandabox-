@@ -1,17 +1,3 @@
-# Put main module on path from `tests` directory
-import os
-import sys
-sys.path.insert(
-    0,
-    os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__),
-            '..'
-        )
-    )
-)
-
-# Start imports proper
 import pandaboxlib
 import unittest
 import unittest.mock
