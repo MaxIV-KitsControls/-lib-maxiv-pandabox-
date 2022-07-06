@@ -79,7 +79,7 @@ class PandA:
             self.sock.sendall(line.encode())
 
     def send_seq_table(self, block_id, repeats, trigger,
-                       positions, time1, phase1, time2, phase2):
+                       positions, time1, phase1, time2, phase2, append=0):
         """
           Function to send an array of positions to the sequencer (SEQ)
           table.
@@ -105,8 +105,10 @@ class PandA:
         pos_cmd = ['%d %d %d %d\n' % (code, pos, time1, time2) for pos in positions]
 
         # < overwirte; << append
-        # self.query('SEQ%d.TABLE<<\n'%(block_id)+''.join(pos_cmd))
-        self.query('SEQ%d.TABLE<\n' % (block_id) + ''.join(pos_cmd))
+        if not append:        
+            self.query('SEQ%d.TABLE<\n' % (block_id) + ''.join(pos_cmd))
+        else:
+            self.query('SEQ%d.TABLE<<\n' % (block_id) + ''.join(pos_cmd))
 
     def get_number_channels(self):
         """
