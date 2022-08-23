@@ -3,7 +3,7 @@ from setuptools import setup
 
 
 setup(name = "pandaboxlib",
-      version = "1.0.3",
+      version = "1.0.4",
       description = ("Library for communication with PandABox."
                      "This communication is based in TCP/IP sockets."),
       author = "Jens Sundberg/Juliano Murari",
