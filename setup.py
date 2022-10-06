@@ -13,4 +13,5 @@ setup(name = "pandaboxlib",
       url = "https://github.com/MaxIV-KitsControls/lib-maxiv-pandaboxlib",
       packages =['pandaboxlib'],
       package_dir = {'':'src'},
+      extras_require={"tests": ["pytest", "mock"]},
      )
