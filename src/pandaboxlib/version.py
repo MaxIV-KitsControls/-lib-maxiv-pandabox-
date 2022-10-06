@@ -1,15 +1,17 @@
 import json
 import argparse
+try:
+    from ._version import version as scm_version
+except ImportError:
+    scm_version = "0.0+unknown"
 
 
 # ----------------------------------------------------------
 def version():
     """
     Current version.
-    DO NOT CHANGE THE NEXT LINE, since semver expects it exactly.
     """
-    CURRENT_VERSION = "1.0.4"
-    return CURRENT_VERSION
+    return scm_version
 
 
 # ----------------------------------------------------------
