@@ -29,8 +29,11 @@ class PandA:
         self.sock.connect((self.host, self.port))
 
     def disconnect_from_panda(self):
-        self.sock.shutdown(socket.SHUT_WR)
-        self.sock.close()
+        try:
+            self.sock.shutdown(socket.SHUT_WR)
+            self.sock.close()
+        except:
+            pass
 
     def query(self, cmd):
         self.sock.sendall((cmd + '\n').encode())
